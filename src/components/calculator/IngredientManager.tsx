@@ -9,7 +9,6 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-  DialogFooter,
 } from "../ui/dialog";
 import {
   Table,
@@ -19,7 +18,7 @@ import {
   TableHeader,
   TableRow,
 } from "../ui/table";
-import { Ingredient } from "@/lib/formulationLogic";
+import { Ingredient } from "../lib/formulationLogic";
 
 interface IngredientManagerProps {
   ingredients: Ingredient[];
@@ -31,7 +30,7 @@ interface IngredientManagerProps {
   onRemoveAvailableIngredient: (id: string) => void;
 }
 
-const IngredientManager = ({
+const IngredientManager: React.FC<IngredientManagerProps> = ({
   ingredients,
   availableIngredients,
   onAddIngredient,
@@ -39,20 +38,19 @@ const IngredientManager = ({
   onEditIngredient,
   onAddAvailableIngredient,
   onRemoveAvailableIngredient,
-}: IngredientManagerProps) => {
+}) => {
   const [searchTerm, setSearchTerm] = useState("");
-  const [showNewIngredientForm, setShowNewIngredientForm] = useState(false);
   const [newIngredient, setNewIngredient] = useState<Ingredient>({
     id: "",
     name: "",
-    bk: null as unknown as number,
-    pk: null as unknown as number,
-    lk: null as unknown as number,
-    sk: null as unknown as number,
-    tdn: null as unknown as number,
-    em: null as unknown as number,
-    calcium: null as unknown as number,
-    pricePerKg: null as unknown as number,
+    bk: 0,
+    pk: 0,
+    lk: 0,
+    sk: 0,
+    tdn: 0,
+    em: 0,
+    calcium: 0,
+    pricePerKg: 0,
   });
 
   const filteredIngredients = availableIngredients.filter(ingredient =>
@@ -65,7 +63,6 @@ const IngredientManager = ({
       return;
     }
 
-    // Validate all required fields are filled
     const requiredFields = ['bk', 'pk', 'lk', 'sk', 'tdn', 'em', 'calcium', 'pricePerKg'];
     const emptyFields = requiredFields.filter(field => 
       newIngredient[field as keyof Ingredient] === null || 
@@ -81,223 +78,135 @@ const IngredientManager = ({
     onAddIngredient({ 
       ...newIngredient, 
       id: Math.random().toString(36).substr(2, 9),
-      // Convert all numbers to fixed precision
-      bk: Number(newIngredient.bk),
-      pk: Number(newIngredient.pk),
-      lk: Number(newIngredient.lk),
-      sk: Number(newIngredient.sk),
-      tdn: Number(newIngredient.tdn),
-      em: Number(newIngredient.em),
-      calcium: Number(newIngredient.calcium),
-      pricePerKg: Number(newIngredient.pricePerKg),
     });
 
-    // Reset form
     setNewIngredient({
       id: "",
       name: "",
-      bk: null as unknown as number,
-      pk: null as unknown as number,
-      lk: null as unknown as number,
-      sk: null as unknown as number,
-      tdn: null as unknown as number,
-      em: null as unknown as number,
-      calcium: null as unknown as number,
-      pricePerKg: null as unknown as number,
+      bk: 0,
+      pk: 0,
+      lk: 0,
+      sk: 0,
+      tdn: 0,
+      em: 0,
+      calcium: 0,
+      pricePerKg: 0,
     });
-    setShowNewIngredientForm(false);
   };
 
   return (
     <Card className="p-4 sm:p-6 bg-white">
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-xl font-bold">Bahan Formulasi</h2>
-        <div className="flex gap-2">
-          <Dialog>
-            <DialogTrigger asChild>
-              <Button>
-                <Plus className="h-4 w-4 mr-2" />
-                Tambah Bahan
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="w-full max-w-[95vw] sm:max-w-3xl">
+        <Dialog>
+          <DialogTrigger asChild>
+            <Button>
+              <Plus className="h-4 w-4 mr-2" />
+              Tambah Bahan
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="max-w-full w-[90vw] h-auto p-0 bg-white shadow-lg rounded-lg">
+            <div className="overflow-x-auto"> 
               <DialogHeader>
                 <DialogTitle>Pilih Bahan</DialogTitle>
               </DialogHeader>
               <div className="mb-4">
-                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
+                <div className="flex justify-between items-center mb-4">
                   <Input
                     placeholder="Cari bahan..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full sm:w-64"
+                    className="w-full border border-gray-300 rounded-md p-2"
                   />
-                  <Dialog>
-                    <DialogTrigger asChild>
-                      <Button>
-                        <Plus className="h-4 w-4 mr-2" />
-                        Tambah Bahan Baru
-                      </Button>
-                    </DialogTrigger>
-                    <DialogContent className="w-full max-w-[95vw] sm:max-w-2xl">
-                      <DialogHeader>
-                        <DialogTitle>Tambah Bahan Baru</DialogTitle>
-                      </DialogHeader>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <Input
-                          placeholder="Nama Bahan"
-                          value={newIngredient.name}
-                          onChange={(e) => setNewIngredient({ ...newIngredient, name: e.target.value })}
-                        />
-                        <Input
-                          type="number"
-                          placeholder="BK (%)"
-                          value={newIngredient.bk || ''}
-                          onChange={(e) => setNewIngredient({ ...newIngredient, bk: parseFloat(e.target.value) })}
-                        />
-                        <Input
-                          type="number"
-                          placeholder="PK (%)"
-                          value={newIngredient.pk || ''}
-                          onChange={(e) => setNewIngredient({ ...newIngredient, pk: parseFloat(e.target.value) })}
-                        />
-                        <Input
-                          type="number"
-                          placeholder="LK (%)"
-                          value={newIngredient.lk || ''}
-                          onChange={(e) => setNewIngredient({ ...newIngredient, lk: parseFloat(e.target.value) })}
-                        />
-                        <Input
-                          type="number"
-                          placeholder="SK (%)"
-                          value={newIngredient.sk || ''}
-                          onChange={(e) => setNewIngredient({ ...newIngredient, sk: parseFloat(e.target.value) })}
-                        />
-                        <Input
-                          type="number"
-                          placeholder="TDN (%)"
-                          value={newIngredient.tdn || ''}
-                          onChange={(e) => setNewIngredient({ ...newIngredient, tdn: parseFloat(e.target.value) })}
-                        />
-                        <Input
-                          type="number"
-                          placeholder="EM (Kkal/kg)"
-                          value={newIngredient.em || ''}
-                          onChange={(e) => setNewIngredient({ ...newIngredient, em: parseFloat(e.target.value) })}
-                        />
-                        <Input
-                          type="number"
-                          placeholder="Calcium (%)"
-                          value={newIngredient.calcium || ''}
-                          onChange={(e) => setNewIngredient({ ...newIngredient, calcium: parseFloat(e.target.value) })}
-                        />
-                        <Input
-                          type="number"
-                          placeholder="Harga/kg"
-                          value={newIngredient.pricePerKg || ''}
-                          onChange={(e) => setNewIngredient({ ...newIngredient, pricePerKg: parseFloat(e.target.value) })}
-                        />
-                      </div>
-                      <DialogFooter>
-                        <Button onClick={handleAdd}>Simpan Bahan</Button>
-                      </DialogFooter>
-                    </DialogContent>
-                  </Dialog>
                 </div>
-                <div className="overflow-x-auto">
-                  <div className="min-w-[800px]">
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead className="whitespace-nowrap">Bahan</TableHead>
-                          <TableHead className="whitespace-nowrap">BK (%)</TableHead>
-                          <TableHead className="whitespace-nowrap">PK (%)</TableHead>
-                          <TableHead className="whitespace-nowrap">LK (%)</TableHead>
-                          <TableHead className="whitespace-nowrap">SK (%)</TableHead>
-                          <TableHead className="whitespace-nowrap">TDN (%)</TableHead>
-                          <TableHead className="whitespace-nowrap">EM (Kkal/kg)</TableHead>
-                          <TableHead className="whitespace-nowrap">Ca (%)</TableHead>
-                          <TableHead className="whitespace-nowrap">Harga/kg</TableHead>
-                          <TableHead className="whitespace-nowrap">Aksi</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {filteredIngredients.map((ingredient) => (
-                          <TableRow key={ingredient.id}>
-                            <TableCell className="whitespace-nowrap">{ingredient.name}</TableCell>
-                            <TableCell className="whitespace-nowrap">{ingredient.bk}%</TableCell>
-                            <TableCell className="whitespace-nowrap">{ingredient.pk}%</TableCell>
-                            <TableCell className="whitespace-nowrap">{ingredient.lk}%</TableCell>
-                            <TableCell className="whitespace-nowrap">{ingredient.sk}%</TableCell>
-                            <TableCell className="whitespace-nowrap">{ingredient.tdn}%</TableCell>
-                            <TableCell className="whitespace-nowrap">{ingredient.em}</TableCell>
-                            <TableCell className="whitespace-nowrap">{ingredient.calcium}%</TableCell>
-                            <TableCell className="whitespace-nowrap">{ingredient.pricePerKg}</TableCell>
-                            <TableCell>
-                              <Button
-                                size="sm"
-                                onClick={() => onAddAvailableIngredient(ingredient)}
-                              >
-                                <Plus className="h-4 w-4" />
-                              </Button>
-                            </TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  </div>
-                </div>
+                <Table className="border-collapse w-full min-w-[600px]">
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Bahan</TableHead>
+                      <TableHead>BK</TableHead>
+                      <TableHead>PK</TableHead>
+                      <TableHead>LK</TableHead>
+                      <TableHead>SK</TableHead>
+                      <TableHead>TDN</TableHead>
+                      <TableHead>EM</TableHead>
+                      <TableHead>Ca</TableHead>
+                      <TableHead>Harga/kg</TableHead>
+                      <TableHead>Aksi</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredIngredients.map((ingredient) => (
+                      <TableRow key={ingredient.id}>
+                        <TableCell>{ingredient.name}</TableCell>
+                        <TableCell>{ingredient.bk}%</TableCell>
+                        <TableCell>{ingredient.pk}%</TableCell>
+                        <TableCell>{ingredient.lk}%</TableCell>
+                        <TableCell>{ingredient.sk}%</TableCell>
+                        <TableCell>{ingredient.tdn}%</TableCell>
+                        <TableCell>{ingredient.em}</TableCell>
+                        <TableCell>{ingredient.calcium}%</TableCell>
+                        <TableCell>{ingredient.pricePerKg}</TableCell>
+                        <TableCell>
+                          <Button
+                            size="sm"
+                            onClick={() => onAddAvailableIngredient(ingredient)}
+                          >
+                            <Plus className="h-4 w-4" />
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
               </div>
-            </DialogContent>
-          </Dialog>
-        </div>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
 
       <div>
         <h3 className="text-lg font-semibold mb-2">Bahan Terpilih</h3>
-        <div className="overflow-x-auto">
-          <div className="min-w-[800px]">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="whitespace-nowrap">Bahan</TableHead>
-                  <TableHead className="whitespace-nowrap">BK (%)</TableHead>
-                  <TableHead className="whitespace-nowrap">PK (%)</TableHead>
-                  <TableHead className="whitespace-nowrap">LK (%)</TableHead>
-                  <TableHead className="whitespace-nowrap">SK (%)</TableHead>
-                  <TableHead className="whitespace-nowrap">TDN (%)</TableHead>
-                  <TableHead className="whitespace-nowrap">EM (Kkal/kg)</TableHead>
-                  <TableHead className="whitespace-nowrap">Ca (%)</TableHead>
-                  <TableHead className="whitespace-nowrap">Harga/kg</TableHead>
-                  <TableHead className="whitespace-nowrap">Aksi</TableHead>
+        <div className="overflow-auto border border-gray-300 rounded-lg">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Bahan</TableHead>
+                <TableHead>BK</TableHead>
+                <TableHead>PK</TableHead>
+                <TableHead>LK</TableHead>
+                <TableHead>SK</TableHead>
+                <TableHead>TDN</TableHead>
+                <TableHead>EM</TableHead>
+                <TableHead>Ca</TableHead>
+                <TableHead>Harga/kg</TableHead>
+                <TableHead>Aksi</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {ingredients.map((ingredient) => (
+                <TableRow key={ingredient.id}>
+                  <TableCell>{ingredient.name}</TableCell>
+                  <TableCell>{ingredient.bk}%</TableCell>
+                  <TableCell>{ingredient.pk}%</TableCell>
+                  <TableCell>{ingredient.lk}%</TableCell>
+                  <TableCell>{ingredient.sk}%</TableCell>
+                  <TableCell>{ingredient.tdn}%</TableCell>
+                  <TableCell>{ingredient.em}</TableCell>
+                  <TableCell>{ingredient.calcium}%</TableCell>
+                  <TableCell>{ingredient.pricePerKg}</TableCell>
+                  <TableCell>
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      onClick={() => onDeleteIngredient(ingredient.id)}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </TableCell>
                 </TableRow>
-              </TableHeader>
-              <TableBody>
-                {ingredients.map((ingredient) => (
-                  <TableRow key={ingredient.id}>
-                    <TableCell className="whitespace-nowrap">{ingredient.name}</TableCell>
-                    <TableCell className="whitespace-nowrap">{ingredient.bk}%</TableCell>
-                    <TableCell className="whitespace-nowrap">{ingredient.pk}%</TableCell>
-                    <TableCell className="whitespace-nowrap">{ingredient.lk}%</TableCell>
-                    <TableCell className="whitespace-nowrap">{ingredient.sk}%</TableCell>
-                    <TableCell className="whitespace-nowrap">{ingredient.tdn}%</TableCell>
-                    <TableCell className="whitespace-nowrap">{ingredient.em}</TableCell>
-                    <TableCell className="whitespace-nowrap">{ingredient.calcium}%</TableCell>
-                    <TableCell className="whitespace-nowrap">{ingredient.pricePerKg}</TableCell>
-                    <TableCell>
-                      <Button
-                        variant="destructive"
-                        size="sm"
-                        onClick={() => onDeleteIngredient(ingredient.id)}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
+              ))}
+            </TableBody>
+          </Table>
         </div>
       </div>
     </Card>
