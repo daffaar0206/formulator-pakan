@@ -35,25 +35,39 @@ export interface FormulationResult {
   warnings?: string[];
 }
 
+interface IngredientScore {
+  ingredient: Ingredient;
+  score: number;
+  optimalPercentage: number;
+  ratios: {
+    pkRatio: number;
+    skRatio: number;
+    tdnRatio: number;
+    emRatio: number;
+    lkRatio: number;
+    calciumRatio: number;
+  };
+}
+
 // Define maximum thresholds as percentages of requirements
-const MAX_NUTRIENT_THRESHOLDS = {
-  pk: 1.02,  // Max 102% of requirement (very tight limit for PK)
-  lk: 1.15,  // Max 115% of requirement
-  sk: 1.15,  // Max 115% of requirement
-  tdn: 1.15, // Max 115% of requirement
-  em: 1.15,  // Max 115% of requirement
-  calcium: 1.15, // Max 115% of requirement
-};
+export const MAX_NUTRIENT_THRESHOLDS = {
+  pk: 1.03,  // Max 103% of requirement (tighter control)
+  lk: 1.10,  // Max 110% of requirement
+  sk: 1.02,  // Max 102% of requirement (very strict SK limit)
+  tdn: 1.05, // Max 105% of requirement
+  em: 1.05,  // Max 105% of requirement
+  calcium: 1.10, // Max 110% of requirement
+} as const;
 
 // Define minimum thresholds as percentages of requirements
-const MIN_NUTRIENT_THRESHOLDS = {
-  pk: 0.98,  // Min 98% of requirement (tight range for PK)
-  lk: 0.85,  // Min 85% of requirement
-  sk: 0.90,  // Min 90% of requirement
-  tdn: 0.85, // Min 85% of requirement
-  em: 0.85,  // Min 85% of requirement
-  calcium: 0.85, // Min 85% of requirement
-};
+export const MIN_NUTRIENT_THRESHOLDS = {
+  pk: 0.97,  // Min 97% of requirement
+  lk: 0.90,  // Min 90% of requirement
+  sk: 0.98,  // Min 98% of requirement (tight SK range)
+  tdn: 0.95, // Min 95% of requirement
+  em: 0.95,  // Min 95% of requirement
+  calcium: 0.90, // Min 90% of requirement
+} as const;
 
 export const calculateNutritionalValues = (
   ingredients: Ingredient[],
@@ -85,15 +99,11 @@ export const calculateFormulation = (
   ingredients: Ingredient[],
   requirements: NutritionalRequirement,
 ): FormulationResult => {
-  // Define percentage limits
-  const MIN_INGREDIENT_PERCENTAGE = 5;  // Minimum 5% per ingredient
-  const MAX_INGREDIENT_PERCENTAGE = 30; // Maximum 30% per ingredient
-
   let remainingPercentage = 100;
   let results: FormulaResult[] = [];
   let totalCost = 0;
   
-  let cumulativeNutrients = {
+  let cumulativeNutrients: NutritionalRequirement = {
     pk: 0,
     lk: 0,
     sk: 0,
@@ -102,130 +112,114 @@ export const calculateFormulation = (
     calcium: 0,
   };
 
-  // Calculate maximum allowed values
-  const maxAllowed = {
-    pk: requirements.pk * MAX_NUTRIENT_THRESHOLDS.pk,
-    lk: requirements.lk * MAX_NUTRIENT_THRESHOLDS.lk,
-    sk: requirements.sk * MAX_NUTRIENT_THRESHOLDS.sk,
-    tdn: requirements.tdn * MAX_NUTRIENT_THRESHOLDS.tdn,
-    em: requirements.em * MAX_NUTRIENT_THRESHOLDS.em,
-    calcium: requirements.calcium * MAX_NUTRIENT_THRESHOLDS.calcium,
-  };
+  // Calculate base scores and optimal percentages for each ingredient
+  const ingredientScores: IngredientScore[] = ingredients.map(ing => {
+    // Calculate nutrient ratios
+    const pkRatio = ing.pk / requirements.pk;
+    const skRatio = ing.sk / requirements.sk;
+    const tdnRatio = ing.tdn / requirements.tdn;
+    const emRatio = ing.em / requirements.em;
+    const lkRatio = ing.lk / requirements.lk;
+    const calciumRatio = ing.calcium / requirements.calcium;
 
-  // Sort ingredients by balanced nutrient contribution
-  const sortedIngredients = [...ingredients].sort((a, b) => {
-    // Calculate nutrient balance scores
-    const getNutrientScore = (ing: Ingredient) => {
-      const pkScore = Math.min(ing.pk / requirements.pk, 1.1);
-      const tdnScore = ing.tdn / requirements.tdn;
-      const emScore = ing.em / requirements.em;
-      const calciumScore = ing.calcium / requirements.calcium;
-      
-      // Encourage ingredients that contribute multiple nutrients
-      const balanceScore = (
-        (pkScore > 0 ? 1 : 0) +
-        (tdnScore > 0 ? 1 : 0) +
-        (emScore > 0 ? 1 : 0) +
-        (calciumScore > 0 ? 1 : 0)
-      );
-
-      return (pkScore + tdnScore + emScore + calciumScore) * balanceScore / ing.pricePerKg;
-    };
-
-    return getNutrientScore(b) - getNutrientScore(a);
-  });
-
-  while (remainingPercentage > MIN_INGREDIENT_PERCENTAGE) {
-    const deficits = {
-      pk: Math.max(0, requirements.pk - cumulativeNutrients.pk),
-      lk: Math.max(0, requirements.lk - cumulativeNutrients.lk),
-      sk: Math.max(0, requirements.sk - cumulativeNutrients.sk),
-      tdn: Math.max(0, requirements.tdn - cumulativeNutrients.tdn),
-      em: Math.max(0, requirements.em - cumulativeNutrients.em),
-      calcium: Math.max(0, requirements.calcium - cumulativeNutrients.calcium),
-    };
-
-    // Check if we've met all requirements
-    if (Object.values(deficits).every(v => v === 0)) break;
-
-    let bestIngredient = null;
-    let bestPercentage = 0;
-
-    for (const ingredient of sortedIngredients) {
-      if (results.some(r => r.ingredient === ingredient.name)) continue;
-
-      // Calculate maximum percentage that won't exceed any nutrient limit
-      const maxPercentages = {
-        pk: ((maxAllowed.pk - cumulativeNutrients.pk) * 100) / ingredient.pk,
-        lk: ((maxAllowed.lk - cumulativeNutrients.lk) * 100) / ingredient.lk,
-        sk: ((maxAllowed.sk - cumulativeNutrients.sk) * 100) / ingredient.sk,
-        tdn: ((maxAllowed.tdn - cumulativeNutrients.tdn) * 100) / ingredient.tdn,
-        em: ((maxAllowed.em - cumulativeNutrients.em) * 100) / ingredient.em,
-        calcium: ((maxAllowed.calcium - cumulativeNutrients.calcium) * 100) / ingredient.calcium,
-      };
-
-      // Enforce minimum and maximum percentage limits
-      const maxPossiblePercentage = Math.min(
-        remainingPercentage,
-        MAX_INGREDIENT_PERCENTAGE,
-        ...Object.values(maxPercentages).filter(v => !isNaN(v) && v > 0)
-      );
-
-      // Skip if we can't meet minimum percentage requirement
-      if (maxPossiblePercentage < MIN_INGREDIENT_PERCENTAGE) continue;
-
-      // Adjust percentage based on remaining needs
-      const totalDeficit = Object.values(deficits).reduce((sum, v) => sum + v, 0);
-      const totalContribution = (
-        (ingredient.pk * maxPossiblePercentage / 100) +
-        (ingredient.lk * maxPossiblePercentage / 100) +
-        (ingredient.sk * maxPossiblePercentage / 100) +
-        (ingredient.tdn * maxPossiblePercentage / 100) +
-        (ingredient.em * maxPossiblePercentage / 100) +
-        (ingredient.calcium * maxPossiblePercentage / 100)
-      );
-
-      // Calculate optimal percentage while respecting minimum
-      let adjustedPercentage = Math.max(
-        MIN_INGREDIENT_PERCENTAGE,
-        Math.min(
-          maxPossiblePercentage,
-          (maxPossiblePercentage * totalDeficit) / totalContribution
-        )
-      );
-
-      // Round to 2 decimal places
-      adjustedPercentage = Number(adjustedPercentage.toFixed(2));
-
-      if (adjustedPercentage >= MIN_INGREDIENT_PERCENTAGE) {
-        bestIngredient = ingredient;
-        bestPercentage = adjustedPercentage;
-        break;
-      }
+    // Calculate optimal percentage based on nutrient contribution
+    let optimalPercentage = (requirements.pk / ing.pk) * 15; // Start with PK-based percentage
+    
+    // Adjust based on SK content
+    if (skRatio > 1.2) {
+      optimalPercentage *= 0.4; // Heavy reduction for very high SK
+    } else if (skRatio > 1.1) {
+      optimalPercentage *= 0.6; // Moderate reduction for high SK
     }
 
-    if (!bestIngredient || bestPercentage < MIN_INGREDIENT_PERCENTAGE) break;
+    // Further adjust based on cost and other nutrients
+    const costFactor = Math.min(1, 5000 / ing.pricePerKg); // Reduce percentage for expensive ingredients
+    optimalPercentage *= costFactor;
 
-    // Add ingredient to results
-    const totalIngredientCost = (bestIngredient.pricePerKg * bestPercentage) / 100;
+    // Ensure percentage is within reasonable bounds
+    optimalPercentage = Math.min(Math.max(optimalPercentage, 5), 20);
+
+    // Calculate score based on nutrient balance and cost
+    const nutrientScore = (
+      (Math.min(pkRatio, 1.1) * 35) + // Highest weight to PK
+      (Math.min(tdnRatio, 1.1) * 25) + // High weight to TDN
+      (Math.min(emRatio, 1.1) * 20) + // Good weight to EM
+      (Math.min(skRatio, 1.0) * 10) + // Lower weight to SK, cap at 100%
+      (Math.min(lkRatio, 1.1) * 5) +
+      (Math.min(calciumRatio, 1.1) * 5)
+    ) / ing.pricePerKg; // Consider cost efficiency
+
+    return {
+      ingredient: ing,
+      score: nutrientScore,
+      optimalPercentage,
+      ratios: { pkRatio, skRatio, tdnRatio, emRatio, lkRatio, calciumRatio }
+    };
+  });
+
+  // Sort ingredients by score
+  const sortedScores = [...ingredientScores].sort((a, b) => b.score - a.score);
+
+  // First pass: Allocate percentages to top ingredients based on their optimal percentages
+  for (const scored of sortedScores) {
+    if (remainingPercentage < 5) break;
+    if (results.length >= 8) break; // Maximum 8 ingredients
+
+    // Calculate percentage based on optimal and remaining
+    let percentage = Math.min(
+      scored.optimalPercentage,
+      remainingPercentage,
+      20 // Hard cap at 20%
+    );
+
+    // Check nutrient limits
+    const wouldExceedLimits = Object.entries(requirements).some(([nutrient, requirement]) => {
+      const currentValue = cumulativeNutrients[nutrient as keyof NutritionalRequirement];
+      const contribution = (scored.ingredient[nutrient as keyof Ingredient] as number * percentage) / 100;
+      const maxAllowed = requirement * MAX_NUTRIENT_THRESHOLDS[nutrient as keyof typeof MAX_NUTRIENT_THRESHOLDS];
+      return currentValue + contribution > maxAllowed;
+    });
+
+    if (wouldExceedLimits) {
+      percentage = Math.max(5, percentage * 0.6); // Reduce but maintain minimum
+    }
+
+    const totalIngredientCost = (scored.ingredient.pricePerKg * percentage) / 100;
 
     // Update cumulative nutrients
-    cumulativeNutrients.pk += (bestIngredient.pk * bestPercentage) / 100;
-    cumulativeNutrients.lk += (bestIngredient.lk * bestPercentage) / 100;
-    cumulativeNutrients.sk += (bestIngredient.sk * bestPercentage) / 100;
-    cumulativeNutrients.tdn += (bestIngredient.tdn * bestPercentage) / 100;
-    cumulativeNutrients.em += (bestIngredient.em * bestPercentage) / 100;
-    cumulativeNutrients.calcium += (bestIngredient.calcium * bestPercentage) / 100;
+    cumulativeNutrients.pk += (scored.ingredient.pk * percentage) / 100;
+    cumulativeNutrients.lk += (scored.ingredient.lk * percentage) / 100;
+    cumulativeNutrients.sk += (scored.ingredient.sk * percentage) / 100;
+    cumulativeNutrients.tdn += (scored.ingredient.tdn * percentage) / 100;
+    cumulativeNutrients.em += (scored.ingredient.em * percentage) / 100;
+    cumulativeNutrients.calcium += (scored.ingredient.calcium * percentage) / 100;
 
     results.push({
-      ingredient: bestIngredient.name,
-      percentage: bestPercentage,
-      costPerKg: bestIngredient.pricePerKg,
+      ingredient: scored.ingredient.name,
+      percentage: Number(percentage.toFixed(2)),
+      costPerKg: scored.ingredient.pricePerKg,
       totalCost: Number(totalIngredientCost.toFixed(2)),
     });
 
-    remainingPercentage -= bestPercentage;
+    remainingPercentage -= percentage;
     totalCost += totalIngredientCost;
+  }
+
+  // If there's remaining percentage, distribute it proportionally based on scores
+  if (remainingPercentage > 0 && results.length > 0) {
+    const totalScore = results.reduce((sum, result) => {
+      const score = sortedScores.find(s => s.ingredient.name === result.ingredient)?.score || 0;
+      return sum + score;
+    }, 0);
+
+    results.forEach(result => {
+      const score = sortedScores.find(s => s.ingredient.name === result.ingredient)?.score || 0;
+      const additionalPercentage = (remainingPercentage * score) / totalScore;
+      const newPercentage = Number((result.percentage + additionalPercentage).toFixed(2));
+      const newCost = Number((result.costPerKg * newPercentage / 100).toFixed(2));
+      result.percentage = newPercentage;
+      result.totalCost = newCost;
+    });
   }
 
   // Calculate final nutritional values

@@ -51,6 +51,7 @@ const FormulaAdjuster: React.FC<FormulaAdjusterProps> = ({
     em: 0,
     calcium: 0,
   });
+  const [totalPercentage, setTotalPercentage] = useState(0);
 
   useEffect(() => {
     setAdjustedFormula(initialFormula);
@@ -63,6 +64,8 @@ const FormulaAdjuster: React.FC<FormulaAdjusterProps> = ({
 
   useEffect(() => {
     calculateCurrentNutrients();
+    const total = adjustedFormula.reduce((sum, item) => sum + item.percentage, 0);
+    setTotalPercentage(Number(total.toFixed(2)));
   }, [adjustedFormula]);
 
   const calculateCurrentNutrients = () => {
@@ -75,39 +78,6 @@ const FormulaAdjuster: React.FC<FormulaAdjusterProps> = ({
     setCurrentNutrients(nutrients);
   };
 
-  const handleAddIngredient = () => {
-    if (!selectedIngredient || !newPercentage) return;
-
-    const ingredient = ingredients.find(ing => ing.name === selectedIngredient);
-    if (!ingredient) return;
-
-    const percentage = parseFloat(newPercentage);
-    if (isNaN(percentage) || percentage <= 0) return;
-
-    // Calculate total percentage including new addition
-    const currentTotal = adjustedFormula.reduce((sum, item) => sum + item.percentage, 0);
-    if (currentTotal + percentage > 100) {
-      alert("Total persentase tidak boleh melebihi 100%");
-      return;
-    }
-
-    const newFormula = [
-      ...adjustedFormula,
-      {
-        ingredient: selectedIngredient,
-        percentage,
-        costPerKg: ingredient.pricePerKg,
-        totalCost: (ingredient.pricePerKg * percentage) / 100,
-      },
-    ];
-
-    setAdjustedFormula(newFormula);
-    setUnusedIngredients(unusedIngredients.filter(ing => ing.name !== selectedIngredient));
-    setSelectedIngredient("");
-    setNewPercentage("");
-    onUpdate(newFormula);
-  };
-
   const handleUpdatePercentage = (index: number, newValue: string) => {
     const percentage = parseFloat(newValue);
     if (isNaN(percentage)) return;
@@ -118,7 +88,7 @@ const FormulaAdjuster: React.FC<FormulaAdjusterProps> = ({
     );
 
     if (otherTotal + percentage > 100) {
-      alert("Total persentase tidak boleh melebihi 100%");
+      alert(`Total persentase akan melebihi 100%. Sisa yang tersedia: ${(100 - otherTotal).toFixed(2)}%`);
       return;
     }
 
@@ -133,8 +103,68 @@ const FormulaAdjuster: React.FC<FormulaAdjusterProps> = ({
       return item;
     });
 
+    // If this is the last ingredient, adjust to reach 100%
+    if (index === adjustedFormula.length - 1) {
+      const currentTotal = newFormula.reduce((sum, item) => sum + item.percentage, 0);
+      if (currentTotal < 100) {
+        const lastItem = newFormula[newFormula.length - 1];
+        const adjustment = 100 - currentTotal;
+        lastItem.percentage = Number((lastItem.percentage + adjustment).toFixed(2));
+        lastItem.totalCost = Number((lastItem.costPerKg * lastItem.percentage / 100).toFixed(2));
+      }
+    }
+
     setAdjustedFormula(newFormula);
-    onUpdate(newFormula);
+    
+    // Only update if total is 100%
+    const total = newFormula.reduce((sum, item) => sum + item.percentage, 0);
+    if (Math.abs(total - 100) < 0.01) { // Allow for small rounding errors
+      onUpdate(newFormula);
+    }
+  };
+
+  const handleAddIngredient = () => {
+    if (!selectedIngredient || !newPercentage) return;
+
+    const ingredient = ingredients.find(ing => ing.name === selectedIngredient);
+    if (!ingredient) return;
+
+    const percentage = parseFloat(newPercentage);
+    if (isNaN(percentage) || percentage <= 0) return;
+
+    // Calculate total percentage including new addition
+    const currentTotal = adjustedFormula.reduce((sum, item) => sum + item.percentage, 0);
+    
+    // If this is the last ingredient, adjust percentage to reach exactly 100%
+    let adjustedPercentage = percentage;
+    if (currentTotal + percentage > 100) {
+      adjustedPercentage = 100 - currentTotal;
+      if (adjustedPercentage <= 0) {
+        alert("Tidak ada sisa persentase yang tersedia");
+        return;
+      }
+    }
+
+    const newFormula = [
+      ...adjustedFormula,
+      {
+        ingredient: selectedIngredient,
+        percentage: adjustedPercentage,
+        costPerKg: ingredient.pricePerKg,
+        totalCost: (ingredient.pricePerKg * adjustedPercentage) / 100,
+      },
+    ];
+
+    setAdjustedFormula(newFormula);
+    setUnusedIngredients(unusedIngredients.filter(ing => ing.name !== selectedIngredient));
+    setSelectedIngredient("");
+    setNewPercentage("");
+    
+    // Only update if total is 100%
+    const total = newFormula.reduce((sum, item) => sum + item.percentage, 0);
+    if (Math.abs(total - 100) < 0.01) { // Allow for small rounding errors
+      onUpdate(newFormula);
+    }
   };
 
   const handleRemoveIngredient = (index: number) => {
@@ -168,7 +198,20 @@ const FormulaAdjuster: React.FC<FormulaAdjusterProps> = ({
   return (
     <Card className="p-4 sm:p-6 bg-white">
       <div className="mb-4 sm:mb-6">
-        <h2 className="text-xl sm:text-2xl font-bold mb-4">Penyesuaian Formula</h2>
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-xl sm:text-2xl font-bold">Penyesuaian Formula</h2>
+          <div className={`text-sm font-medium ${Math.abs(totalPercentage - 100) < 0.01 ? 'text-green-500' : 'text-red-500'}`}>
+            Total: {totalPercentage}%
+            {Math.abs(totalPercentage - 100) >= 0.01 && (
+              <span className="ml-2">
+                {totalPercentage < 100 
+                  ? `(Kurang ${(100 - totalPercentage).toFixed(2)}%)`
+                  : `(Lebih ${(totalPercentage - 100).toFixed(2)}%)`
+                }
+              </span>
+            )}
+          </div>
+        </div>
         <div className="flex flex-col sm:flex-row gap-4">
           <select
             className="border p-2 rounded flex-grow"
@@ -185,19 +228,34 @@ const FormulaAdjuster: React.FC<FormulaAdjusterProps> = ({
           <div className="flex gap-2">
             <Input
               type="number"
-              placeholder="Persentase"
+              placeholder={`Sisa: ${(100 - totalPercentage).toFixed(2)}%`}
               value={newPercentage}
               onChange={(e) => setNewPercentage(e.target.value)}
               className="w-32"
             />
-            <Button onClick={handleAddIngredient}>Tambah</Button>
+            <Button 
+              onClick={handleAddIngredient}
+              disabled={totalPercentage >= 100}
+            >
+              Tambah
+            </Button>
           </div>
         </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
         <div className="overflow-x-auto">
-          <h3 className="text-lg font-semibold mb-2">Formula Saat Ini</h3>
+          <div className="flex justify-between items-center mb-2">
+            <h3 className="text-lg font-semibold">Formula Saat Ini</h3>
+            {totalPercentage !== 100 && (
+              <div className="text-sm text-red-500">
+                {totalPercentage < 100 
+                  ? `Kurang ${(100 - totalPercentage).toFixed(2)}%`
+                  : `Lebih ${(totalPercentage - 100).toFixed(2)}%`
+                }
+              </div>
+            )}
+          </div>
           <div className="min-w-[300px]">
             <Table>
               <TableHeader>

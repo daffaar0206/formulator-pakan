@@ -7,20 +7,26 @@ import NutritionalDisplay from "./calculator/NutritionalDisplay";
 import FormulaResults from "./calculator/FormulaResults";
 import FormulaAdjuster from "./calculator/FormulaAdjuster";
 import AnimalRequirementsManager from "./calculator/AnimalRequirementsManager";
-import { defaultIngredients } from "@/lib/defaultIngredients";
-import { calculateFormulation, calculateNutritionalValues } from "@/lib/formulationLogic";
-import type { FormulaResult } from "@/lib/formulationLogic";
+import { defaultIngredients, availableIngredientsList } from "@/lib/defaultIngredients";
+import { calculateFormulation, calculateNutritionalValues, type Ingredient, type FormulaResult } from "@/lib/formulationLogic";
 
 const Home = () => {
   const [selectedAnimalType, setSelectedAnimalType] = useState(() => {
     return localStorage.getItem("selectedAnimalType") || "dairy-cattle";
   });
+
   const [selectedAgeGroup, setSelectedAgeGroup] = useState(() => {
     return localStorage.getItem("selectedAgeGroup") || "calf";
   });
-  const [ingredients, setIngredients] = useState(() => {
+
+  const [ingredients, setIngredients] = useState<Ingredient[]>(() => {
     const saved = localStorage.getItem("ingredients");
-    return saved ? JSON.parse(saved) : defaultIngredients;
+    return saved ? JSON.parse(saved) : [];
+  });
+
+  const [availableIngredients, setAvailableIngredients] = useState<Ingredient[]>(() => {
+    const saved = localStorage.getItem("availableIngredients");
+    return saved ? JSON.parse(saved) : availableIngredientsList;
   });
 
   const [nutritionalValues, setNutritionalValues] = useState({
@@ -31,6 +37,7 @@ const Home = () => {
     em: 0,
     calcium: 0,
   });
+
   const [formulaResults, setFormulaResults] = useState<FormulaResult[]>([]);
   const [totalFormulaCost, setTotalFormulaCost] = useState(0);
   const [showAdjuster, setShowAdjuster] = useState(false);
@@ -39,20 +46,35 @@ const Home = () => {
 
   useEffect(() => {
     localStorage.setItem("ingredients", JSON.stringify(ingredients));
+    localStorage.setItem("availableIngredients", JSON.stringify(availableIngredients));
     localStorage.setItem("selectedAnimalType", selectedAnimalType);
     localStorage.setItem("selectedAgeGroup", selectedAgeGroup);
-  }, [ingredients, selectedAnimalType, selectedAgeGroup]);
+  }, [ingredients, availableIngredients, selectedAnimalType, selectedAgeGroup]);
 
-  const handleAddIngredient = (newIngredient: any) => {
+  const handleAddAvailableIngredient = (ingredient: Ingredient) => {
+    if (ingredients.some(ing => ing.id === ingredient.id)) {
+      alert("Bahan ini sudah ada dalam formulasi");
+      return;
+    }
+    setIngredients([...ingredients, { ...ingredient }]);
+  };
+
+  const handleRemoveAvailableIngredient = (id: string) => {
+    setIngredients(ingredients.filter(ing => ing.id !== id));
+    setAvailableIngredients(availableIngredients.filter(ing => ing.id !== id));
+  };
+
+  const handleAddNewIngredient = (newIngredient: Ingredient) => {
     const id = Math.random().toString(36).substr(2, 9);
-    setIngredients([...ingredients, { ...newIngredient, id }]);
+    const ingredientWithId = { ...newIngredient, id };
+    setAvailableIngredients([...availableIngredients, ingredientWithId]);
   };
 
   const handleDeleteIngredient = (id: string) => {
     setIngredients(ingredients.filter((ing) => ing.id !== id));
   };
 
-  const handleEditIngredient = (id: string, updatedIngredient: any) => {
+  const handleEditIngredient = (id: string, updatedIngredient: Ingredient) => {
     setIngredients(
       ingredients.map((ing) =>
         ing.id === id ? { ...updatedIngredient, id } : ing,
@@ -64,7 +86,6 @@ const Home = () => {
     updateRequirements(selectedAnimalType, selectedAgeGroup, {
       pk, lk, sk, tdn, em, calcium
     });
-    // Recalculate formula if it exists
     if (formulaResults.length > 0) {
       handleFormulation();
     }
@@ -76,12 +97,8 @@ const Home = () => {
       ageGroup,
       requirements
     });
-    
-    // Switch to new animal type
     setSelectedAnimalType(type);
     setSelectedAgeGroup(ageGroup);
-    
-    // Reset formula
     setFormulaResults([]);
     setAdjustedFormula([]);
     setNutritionalValues({
@@ -97,22 +114,22 @@ const Home = () => {
   };
 
   const handleFormulation = () => {
+    if (ingredients.length === 0) {
+      alert("Silakan pilih bahan terlebih dahulu untuk memulai formulasi");
+      return;
+    }
+
     const requirements = nutritionalRequirements[selectedAnimalType][selectedAgeGroup];
     const result = calculateFormulation(ingredients, requirements);
     
-    // Reset formula adjuster state
     setShowAdjuster(false);
-    
-    // Update results
     setFormulaResults(result.results);
     setTotalFormulaCost(result.totalCost);
     setNutritionalValues(result.nutritionalValues);
     
-    // Force FormulaAdjuster to re-render with new data
     setFormulationKey(prev => prev + 1);
     setAdjustedFormula(result.results);
     
-    // Show adjuster after a brief delay to ensure clean re-render
     setTimeout(() => {
       setShowAdjuster(true);
     }, 100);
@@ -121,11 +138,9 @@ const Home = () => {
   const handleFormulaUpdate = (newFormula: FormulaResult[]) => {
     setAdjustedFormula(newFormula);
     
-    // Calculate new total cost
     const newTotalCost = newFormula.reduce((sum, item) => sum + item.totalCost, 0);
     setTotalFormulaCost(newTotalCost);
 
-    // Update nutritional values based on the adjusted formula
     const percentages = newFormula.reduce((acc, item) => {
       acc[item.ingredient] = item.percentage;
       return acc;
@@ -136,8 +151,6 @@ const Home = () => {
   };
 
   const handleReset = () => {
-    localStorage.removeItem("ingredients");
-    setIngredients(defaultIngredients);
     setFormulaResults([]);
     setAdjustedFormula([]);
     setNutritionalValues({
@@ -151,6 +164,7 @@ const Home = () => {
     setTotalFormulaCost(0);
     setShowAdjuster(false);
     setFormulationKey(0);
+    setIngredients([]);
   };
 
   return (
@@ -179,9 +193,12 @@ const Home = () => {
             <div className="space-y-4 sm:space-y-6">
               <IngredientManager
                 ingredients={ingredients}
-                onAddIngredient={handleAddIngredient}
+                availableIngredients={availableIngredients}
+                onAddIngredient={handleAddNewIngredient}
                 onDeleteIngredient={handleDeleteIngredient}
                 onEditIngredient={handleEditIngredient}
+                onAddAvailableIngredient={handleAddAvailableIngredient}
+                onRemoveAvailableIngredient={handleRemoveAvailableIngredient}
               />
             </div>
             <div className="space-y-4 sm:space-y-6">
