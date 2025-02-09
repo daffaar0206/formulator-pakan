@@ -7,6 +7,7 @@ export const defaultIngredients = [
     sk: 2.2,
     tdn: 80,
     bk: 86,
+    em: 3350,  // Kkal/kg
     calcium: 0.02,
     pricePerKg: 5000,
   },
@@ -18,6 +19,7 @@ export const defaultIngredients = [
     sk: 11.4,
     tdn: 67,
     bk: 86,
+    em: 2980,  // Kkal/kg
     calcium: 0.1,
     pricePerKg: 3000,
   },
@@ -29,6 +31,7 @@ export const defaultIngredients = [
     sk: 6,
     tdn: 75,
     bk: 86,
+    em: 3260,  // Kkal/kg
     calcium: 0.3,
     pricePerKg: 12000,
   },
@@ -40,6 +43,7 @@ export const defaultIngredients = [
     sk: 1,
     tdn: 72,
     bk: 92,
+    em: 3190,  // Kkal/kg
     calcium: 7.4,
     pricePerKg: 15000,
   },
@@ -51,6 +55,7 @@ export const defaultIngredients = [
     sk: 23.5,
     tdn: 79,
     bk: 18,
+    em: 3220,  // Kkal/kg
     calcium: 0.53,
     pricePerKg: 2000,
   },
@@ -62,6 +67,7 @@ export const defaultIngredients = [
     sk: 12,
     tdn: 74,
     bk: 88,
+    em: 3120,  // Kkal/kg
     calcium: 0.2,
     pricePerKg: 4000,
   },
@@ -73,6 +79,7 @@ export const defaultIngredients = [
     sk: 16.4,
     tdn: 68,
     bk: 88,
+    em: 2850,  // Kkal/kg
     calcium: 1.4,
     pricePerKg: 3500,
   },
@@ -84,6 +91,7 @@ export const defaultIngredients = [
     sk: 8.9,
     tdn: 78,
     bk: 85,
+    em: 3300,  // Kkal/kg
     calcium: 0.15,
     pricePerKg: 2500,
   },
@@ -95,6 +103,7 @@ export const defaultIngredients = [
     sk: 0.4,
     tdn: 75,
     bk: 77,
+    em: 2920,  // Kkal/kg
     calcium: 1.1,
     pricePerKg: 3000,
   },
@@ -106,6 +115,7 @@ export const defaultIngredients = [
     sk: 7.3,
     tdn: 77,
     bk: 86,
+    em: 3180,  // Kkal/kg
     calcium: 0.2,
     pricePerKg: 8000,
   },
@@ -117,6 +127,7 @@ export const defaultIngredients = [
     sk: 19.1,
     tdn: 65,
     bk: 85,
+    em: 2800,  // Kkal/kg
     calcium: 1.2,
     pricePerKg: 2500,
   },
@@ -128,6 +139,7 @@ export const defaultIngredients = [
     sk: 21.1,
     tdn: 57,
     bk: 87,
+    em: 2650,  // Kkal/kg
     calcium: 0.4,
     pricePerKg: 1500,
   },

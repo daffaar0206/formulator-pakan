@@ -18,6 +18,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "../ui/dialog";
+import { defaultIngredients } from "@/lib/defaultIngredients";
 
 interface Ingredient {
   id: string;
@@ -27,6 +28,7 @@ interface Ingredient {
   lk: number;
   sk: number;
   tdn: number;
+  em: number;  // Energi Metabolisme (Kkal/kg)
   calcium: number;
   pricePerKg: number;
 }
@@ -55,11 +57,16 @@ const IngredientManager: React.FC<IngredientManagerProps> = ({
     lk: "",
     sk: "",
     tdn: "",
+    em: "",
     calcium: "",
     pricePerKg: "",
   });
 
   const handleSubmit = () => {
+    // Get default EM value if available
+    const defaultIng = defaultIngredients.find(d => d.name === newIngredient.name);
+    const defaultEM = defaultIng?.em || 0;
+
     const ingredientToSubmit = {
       name: newIngredient.name,
       bk: parseFloat(newIngredient.bk as string) || 0,
@@ -67,9 +74,12 @@ const IngredientManager: React.FC<IngredientManagerProps> = ({
       lk: parseFloat(newIngredient.lk as string) || 0,
       sk: parseFloat(newIngredient.sk as string) || 0,
       tdn: parseFloat(newIngredient.tdn as string) || 0,
+      em: parseFloat(newIngredient.em as string) || defaultEM,  // Use default if available
       calcium: parseFloat(newIngredient.calcium as string) || 0,
       pricePerKg: parseFloat(newIngredient.pricePerKg as string) || 0,
     };
+
+    console.log('Submitting ingredient with EM:', ingredientToSubmit.em);
 
     if (editingIngredient) {
       onEditIngredient(editingIngredient.id, ingredientToSubmit);
@@ -85,9 +95,27 @@ const IngredientManager: React.FC<IngredientManagerProps> = ({
       lk: "",
       sk: "",
       tdn: "",
+      em: "",
       calcium: "",
       pricePerKg: "",
     });
+  };
+
+  const handleEdit = (ingredient: Ingredient) => {
+    console.log('Editing ingredient with EM:', ingredient.em);
+    setEditingIngredient(ingredient);
+    setNewIngredient({
+      name: ingredient.name,
+      bk: ingredient.bk?.toString() || "0",
+      pk: ingredient.pk?.toString() || "0",
+      lk: ingredient.lk?.toString() || "0",
+      sk: ingredient.sk?.toString() || "0",
+      tdn: ingredient.tdn?.toString() || "0",
+      em: ingredient.em?.toString() || "0",
+      calcium: ingredient.calcium?.toString() || "0",
+      pricePerKg: ingredient.pricePerKg?.toString() || "0",
+    });
+    setIsDialogOpen(true);
   };
 
   return (
@@ -162,6 +190,14 @@ const IngredientManager: React.FC<IngredientManagerProps> = ({
                 />
                 <Input
                   type="number"
+                  placeholder="EM (Kkal/kg)"
+                  value={newIngredient.em}
+                  onChange={(e) =>
+                    setNewIngredient({ ...newIngredient, em: e.target.value })
+                  }
+                />
+                <Input
+                  type="number"
                   placeholder="Calcium (%)"
                   value={newIngredient.calcium}
                   onChange={(e) =>
@@ -202,6 +238,7 @@ const IngredientManager: React.FC<IngredientManagerProps> = ({
             <TableHead>LK (%)</TableHead>
             <TableHead>SK (%)</TableHead>
             <TableHead>TDN (%)</TableHead>
+            <TableHead>EM (Kkal/kg)</TableHead>
             <TableHead>Ca (%)</TableHead>
             <TableHead>Harga/kg</TableHead>
             <TableHead>Aksi</TableHead>
@@ -216,6 +253,7 @@ const IngredientManager: React.FC<IngredientManagerProps> = ({
               <TableCell>{ingredient.lk}</TableCell>
               <TableCell>{ingredient.sk}</TableCell>
               <TableCell>{ingredient.tdn}</TableCell>
+              <TableCell>{ingredient.em}</TableCell>
               <TableCell>{ingredient.calcium}</TableCell>
               <TableCell>Rp{ingredient.pricePerKg.toLocaleString()}</TableCell>
               <TableCell>
@@ -223,20 +261,7 @@ const IngredientManager: React.FC<IngredientManagerProps> = ({
                   <Button
                     variant="ghost"
                     size="icon"
-                    onClick={() => {
-                      setEditingIngredient(ingredient);
-                      setNewIngredient({
-                        name: ingredient.name,
-                        bk: ingredient.bk.toString(),
-                        pk: ingredient.pk.toString(),
-                        lk: ingredient.lk.toString(),
-                        sk: ingredient.sk.toString(),
-                        tdn: ingredient.tdn.toString(),
-                        calcium: ingredient.calcium.toString(),
-                        pricePerKg: ingredient.pricePerKg.toString(),
-                      });
-                      setIsDialogOpen(true);
-                    }}
+                    onClick={() => handleEdit(ingredient)}
                   >
                     <Edit2 className="h-4 w-4" />
                   </Button>

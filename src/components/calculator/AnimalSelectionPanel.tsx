@@ -1,97 +1,116 @@
-import React from "react";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "../ui/select";
+import React, { useState, useEffect } from "react";
 import { Card } from "../ui/card";
+import { nutritionalRequirements } from "@/lib/nutritionalRequirements";
 
 interface AnimalSelectionPanelProps {
-  onAnimalTypeChange?: (value: string) => void;
-  onAgeGroupChange?: (value: string) => void;
-  selectedAnimalType?: string;
-  selectedAgeGroup?: string;
+  selectedAnimalType: string;
+  selectedAgeGroup: string;
+  onAnimalTypeChange: (type: string) => void;
+  onAgeGroupChange: (group: string) => void;
 }
 
-const animalTypes = [
-  { value: "dairy-cattle", label: "Dairy Cattle" },
-  { value: "beef-cattle", label: "Beef Cattle" },
-  { value: "broiler-chicken", label: "Broiler Chicken" },
-  { value: "layer-chicken", label: "Layer Chicken" },
-];
-
-const ageGroups = {
-  "dairy-cattle": [
-    { value: "calf", label: "Calf (0-6 months)" },
-    { value: "heifer", label: "Heifer (6-24 months)" },
-    { value: "adult", label: "Adult (>24 months)" },
-  ],
-  "beef-cattle": [
-    { value: "calf", label: "Calf (0-8 months)" },
-    { value: "yearling", label: "Yearling (8-20 months)" },
-    { value: "adult", label: "Adult (>20 months)" },
-  ],
-  "broiler-chicken": [
-    { value: "starter", label: "Starter (0-3 weeks)" },
-    { value: "grower", label: "Grower (3-6 weeks)" },
-    { value: "finisher", label: "Finisher (6-8 weeks)" },
-  ],
-  "layer-chicken": [
-    { value: "chick", label: "Chick (0-8 weeks)" },
-    { value: "pullet", label: "Pullet (8-20 weeks)" },
-    { value: "layer", label: "Layer (>20 weeks)" },
-  ],
-};
-
 const AnimalSelectionPanel: React.FC<AnimalSelectionPanelProps> = ({
-  onAnimalTypeChange = () => {},
-  onAgeGroupChange = () => {},
-  selectedAnimalType = "dairy-cattle",
-  selectedAgeGroup = "calf",
+  selectedAnimalType,
+  selectedAgeGroup,
+  onAnimalTypeChange,
+  onAgeGroupChange,
 }) => {
-  const currentAgeGroups =
-    ageGroups[selectedAnimalType as keyof typeof ageGroups] ||
-    ageGroups["dairy-cattle"];
+  const [animalTypes, setAnimalTypes] = useState<string[]>([]);
+  const [ageGroups, setAgeGroups] = useState<string[]>([]);
+
+  // Update animal types when nutritionalRequirements changes
+  useEffect(() => {
+    const updateAnimalTypes = () => {
+      setAnimalTypes(Object.keys(nutritionalRequirements));
+    };
+
+    // Initial load
+    updateAnimalTypes();
+
+    // Listen for updates
+    window.addEventListener('requirementsUpdated', updateAnimalTypes);
+
+    return () => {
+      window.removeEventListener('requirementsUpdated', updateAnimalTypes);
+    };
+  }, []);
+
+  // Update age groups when animal type changes
+  useEffect(() => {
+    const updateAgeGroups = () => {
+      if (selectedAnimalType && nutritionalRequirements[selectedAnimalType]) {
+        const newAgeGroups = Object.keys(nutritionalRequirements[selectedAnimalType]);
+        setAgeGroups(newAgeGroups);
+        
+        // If current age group is not in new list, select first available
+        if (!newAgeGroups.includes(selectedAgeGroup) && newAgeGroups.length > 0) {
+          onAgeGroupChange(newAgeGroups[0]);
+        }
+      }
+    };
+
+    // Initial load
+    updateAgeGroups();
+
+    // Listen for updates
+    window.addEventListener('requirementsUpdated', updateAgeGroups);
+
+    return () => {
+      window.removeEventListener('requirementsUpdated', updateAgeGroups);
+    };
+  }, [selectedAnimalType, selectedAgeGroup, onAgeGroupChange]);
+
+  const handleAnimalTypeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const newType = e.target.value;
+    onAnimalTypeChange(newType);
+    
+    // Select first age group of new animal type
+    const newAgeGroups = Object.keys(nutritionalRequirements[newType] || {});
+    if (newAgeGroups.length > 0) {
+      onAgeGroupChange(newAgeGroups[0]);
+    }
+  };
+
+  const formatLabel = (text: string) => {
+    return text.split("-").map(word => 
+      word.charAt(0).toUpperCase() + word.slice(1)
+    ).join(" ");
+  };
 
   return (
-    <Card className="p-6 bg-white shadow-sm">
-      <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
-        <div className="flex-1">
+    <Card className="p-6 bg-white">
+      <div className="grid grid-cols-2 gap-6">
+        <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
-            Animal Type
+            Jenis Hewan
           </label>
-          <Select value={selectedAnimalType} onValueChange={onAnimalTypeChange}>
-            <SelectTrigger className="w-full">
-              <SelectValue placeholder="Select animal type" />
-            </SelectTrigger>
-            <SelectContent>
-              {animalTypes.map((type) => (
-                <SelectItem key={type.value} value={type.value}>
-                  {type.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <select
+            value={selectedAnimalType}
+            onChange={handleAnimalTypeChange}
+            className="w-full p-2 border rounded-md"
+          >
+            {animalTypes.map((type) => (
+              <option key={type} value={type}>
+                {formatLabel(type)}
+              </option>
+            ))}
+          </select>
         </div>
-
-        <div className="flex-1">
+        <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
-            Age Group
+            Kelompok Umur
           </label>
-          <Select value={selectedAgeGroup} onValueChange={onAgeGroupChange}>
-            <SelectTrigger className="w-full">
-              <SelectValue placeholder="Select age group" />
-            </SelectTrigger>
-            <SelectContent>
-              {currentAgeGroups.map((group) => (
-                <SelectItem key={group.value} value={group.value}>
-                  {group.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <select
+            value={selectedAgeGroup}
+            onChange={(e) => onAgeGroupChange(e.target.value)}
+            className="w-full p-2 border rounded-md"
+          >
+            {ageGroups.map((group) => (
+              <option key={group} value={group}>
+                {formatLabel(group)}
+              </option>
+            ))}
+          </select>
         </div>
       </div>
     </Card>
