@@ -37,65 +37,6 @@ const Home = () => {
   const [adjustedFormula, setAdjustedFormula] = useState<FormulaResult[]>([]);
   const [formulationKey, setFormulationKey] = useState(0);
 
-  // Listen for requirements updates
-  useEffect(() => {
-    const handleRequirementsUpdate = () => {
-      // Get available animal types
-      const availableTypes = Object.keys(nutritionalRequirements);
-      
-      // If current type no longer exists, switch to first available
-      if (!availableTypes.includes(selectedAnimalType) && availableTypes.length > 0) {
-        const newType = availableTypes[0];
-        setSelectedAnimalType(newType);
-        
-        // Get available age groups for new type
-        const newAgeGroups = Object.keys(nutritionalRequirements[newType]);
-        if (newAgeGroups.length > 0) {
-          setSelectedAgeGroup(newAgeGroups[0]);
-        }
-
-        // Reset formula when switching types
-        setFormulaResults([]);
-        setAdjustedFormula([]);
-        setNutritionalValues({
-          pk: 0,
-          lk: 0,
-          sk: 0,
-          tdn: 0,
-          em: 0,
-          calcium: 0,
-        });
-        setTotalFormulaCost(0);
-        setShowAdjuster(false);
-      } else {
-        // If current age group no longer exists, switch to first available
-        const currentAgeGroups = Object.keys(nutritionalRequirements[selectedAnimalType] || {});
-        if (!currentAgeGroups.includes(selectedAgeGroup) && currentAgeGroups.length > 0) {
-          setSelectedAgeGroup(currentAgeGroups[0]);
-          
-          // Reset formula when switching age groups
-          setFormulaResults([]);
-          setAdjustedFormula([]);
-          setNutritionalValues({
-            pk: 0,
-            lk: 0,
-            sk: 0,
-            tdn: 0,
-            em: 0,
-            calcium: 0,
-          });
-          setTotalFormulaCost(0);
-          setShowAdjuster(false);
-        }
-      }
-    };
-
-    window.addEventListener('requirementsUpdated', handleRequirementsUpdate);
-    return () => {
-      window.removeEventListener('requirementsUpdated', handleRequirementsUpdate);
-    };
-  }, [selectedAnimalType, selectedAgeGroup]);
-
   useEffect(() => {
     localStorage.setItem("ingredients", JSON.stringify(ingredients));
     localStorage.setItem("selectedAnimalType", selectedAnimalType);
@@ -213,63 +154,68 @@ const Home = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 p-8">
-      <div className="max-w-7xl mx-auto space-y-6">
-        <h1 className="text-3xl font-bold text-gray-900 mb-8">
+    <div className="min-h-screen bg-gray-50">
+      <div className="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8 space-y-4 sm:space-y-6">
+        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-4 sm:mb-8">
           Kalkulator Formulasi Pakan
         </h1>
 
-        <AnimalSelectionPanel
-          selectedAnimalType={selectedAnimalType}
-          selectedAgeGroup={selectedAgeGroup}
-          onAnimalTypeChange={setSelectedAnimalType}
-          onAgeGroupChange={setSelectedAgeGroup}
-        />
-
-        <AnimalRequirementsManager
-          selectedAnimalType={selectedAnimalType}
-          selectedAgeGroup={selectedAgeGroup}
-          onUpdateRequirements={handleUpdateRequirements}
-          onAddAnimalType={handleAddAnimalType}
-        />
-
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <div className="space-y-6">
-            <IngredientManager
-              ingredients={ingredients}
-              onAddIngredient={handleAddIngredient}
-              onDeleteIngredient={handleDeleteIngredient}
-              onEditIngredient={handleEditIngredient}
-            />
-          </div>
-          <div className="space-y-6">
-            <FormulaResults
-              results={adjustedFormula.length > 0 ? adjustedFormula : formulaResults}
-              totalCost={totalFormulaCost}
-              onReset={handleReset}
-            />
-            <NutritionalDisplay 
-              nutritionalValues={nutritionalValues}
-              requirements={nutritionalRequirements[selectedAnimalType][selectedAgeGroup]}
-            />
-            <Button
-              className="w-full mt-4"
-              onClick={handleFormulation}
-            >
-              Mulai Formulasi
-            </Button>
-          </div>
-        </div>
-
-        {showAdjuster && (
-          <FormulaAdjuster
-            key={formulationKey}
-            ingredients={ingredients}
-            initialFormula={adjustedFormula}
-            requirements={nutritionalRequirements[selectedAnimalType][selectedAgeGroup]}
-            onUpdate={handleFormulaUpdate}
+        <div className="space-y-4 sm:space-y-6">
+          <AnimalSelectionPanel
+            selectedAnimalType={selectedAnimalType}
+            selectedAgeGroup={selectedAgeGroup}
+            onAnimalTypeChange={setSelectedAnimalType}
+            onAgeGroupChange={setSelectedAgeGroup}
           />
-        )}
+
+          <AnimalRequirementsManager
+            selectedAnimalType={selectedAnimalType}
+            selectedAgeGroup={selectedAgeGroup}
+            onUpdateRequirements={handleUpdateRequirements}
+            onAddAnimalType={handleAddAnimalType}
+          />
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+            <div className="space-y-4 sm:space-y-6">
+              <IngredientManager
+                ingredients={ingredients}
+                onAddIngredient={handleAddIngredient}
+                onDeleteIngredient={handleDeleteIngredient}
+                onEditIngredient={handleEditIngredient}
+              />
+            </div>
+            <div className="space-y-4 sm:space-y-6">
+              <FormulaResults
+                results={adjustedFormula.length > 0 ? adjustedFormula : formulaResults}
+                totalCost={totalFormulaCost}
+                onReset={handleReset}
+              />
+              <NutritionalDisplay 
+                nutritionalValues={nutritionalValues}
+                requirements={nutritionalRequirements[selectedAnimalType][selectedAgeGroup]}
+              />
+              <Button
+                className="w-full mt-4"
+                onClick={handleFormulation}
+                size="lg"
+              >
+                Mulai Formulasi
+              </Button>
+            </div>
+          </div>
+
+          {showAdjuster && (
+            <div className="mt-4 sm:mt-6">
+              <FormulaAdjuster
+                key={formulationKey}
+                ingredients={ingredients}
+                initialFormula={adjustedFormula}
+                requirements={nutritionalRequirements[selectedAnimalType][selectedAgeGroup]}
+                onUpdate={handleFormulaUpdate}
+              />
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

@@ -12,8 +12,8 @@ import { Input } from "../ui/input";
 import { Card } from "../ui/card";
 import { Edit2, ChevronDown, ChevronUp, Trash2 } from "lucide-react";
 import { nutritionalRequirements, addAgeGroup, deleteAnimalType, deleteAgeGroup } from "@/lib/nutritionalRequirements";
-import AddAnimalDialog from "@/components/calculator/AddAnimalDialog";
-import AddAgeGroupDialog from "@/components/calculator/AddAgeGroupDialog";
+import AddAnimalDialog from "./AddAnimalDialog";
+import AddAgeGroupDialog from "./AddAgeGroupDialog";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -33,12 +33,12 @@ interface AnimalRequirementsManagerProps {
   onAddAnimalType: (type: string, ageGroup: string, requirements: any) => void;
 }
 
-const AnimalRequirementsManager = ({
+const AnimalRequirementsManager: React.FC<AnimalRequirementsManagerProps> = ({
   selectedAnimalType,
   selectedAgeGroup,
   onUpdateRequirements,
   onAddAnimalType,
-}: AnimalRequirementsManagerProps) => {
+}) => {
   const [isEditing, setIsEditing] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
   const [editedRequirements, setEditedRequirements] = useState({
@@ -122,185 +122,191 @@ const AnimalRequirementsManager = ({
   };
 
   return (
-    <Card className="p-6 bg-white">
-      <div className="flex justify-between items-center mb-4">
+    <Card className="p-4 sm:p-6 bg-white">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
         <div 
           className="flex items-center gap-2 cursor-pointer"
           onClick={() => setIsExpanded(!isExpanded)}
         >
-          <h2 className="text-2xl font-bold">Kebutuhan Nutrisi</h2>
+          <h2 className="text-xl sm:text-2xl font-bold">Kebutuhan Nutrisi</h2>
           {isExpanded ? (
             <ChevronUp className="h-6 w-6" />
           ) : (
             <ChevronDown className="h-6 w-6" />
           )}
         </div>
-        <div className="flex gap-2 items-center">
-          <div className="text-sm text-gray-500">
+        <div className="flex flex-wrap gap-2 items-center">
+          <div className="text-sm text-gray-500 whitespace-nowrap">
             {selectedAnimalType} - {selectedAgeGroup}
           </div>
-          <AddAnimalDialog onAddAnimal={onAddAnimalType} />
-          <AddAgeGroupDialog 
-            animalType={selectedAnimalType}
-            onAddAgeGroup={handleAddAgeGroup}
-          />
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => isEditing ? handleCancel() : setIsEditing(true)}
-          >
-            <Edit2 className="h-4 w-4 mr-2" />
-            {isEditing ? "Batal" : "Edit"}
-          </Button>
-          {isEditing && (
-            <Button size="sm" onClick={handleSave}>
-              Simpan
+          <div className="flex flex-wrap gap-2">
+            <AddAnimalDialog onAddAnimal={onAddAnimalType} />
+            <AddAgeGroupDialog 
+              animalType={selectedAnimalType}
+              onAddAgeGroup={handleAddAgeGroup}
+            />
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => isEditing ? handleCancel() : setIsEditing(true)}
+            >
+              <Edit2 className="h-4 w-4 mr-2" />
+              {isEditing ? "Batal" : "Edit"}
             </Button>
-          )}
+            {isEditing && (
+              <Button size="sm" onClick={handleSave}>
+                Simpan
+              </Button>
+            )}
+          </div>
         </div>
       </div>
 
       {isExpanded && (
-        <>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Nutrisi</TableHead>
-                <TableHead>Nilai</TableHead>
-                <TableHead>Satuan</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              <TableRow>
-                <TableCell>Protein Kasar (PK)</TableCell>
-                <TableCell>
-                  {isEditing ? (
-                    <Input
-                      type="number"
-                      value={editedRequirements.pk}
-                      onChange={(e) =>
-                        setEditedRequirements({
-                          ...editedRequirements,
-                          pk: parseFloat(e.target.value) || 0,
-                        })
-                      }
-                      className="w-24"
-                    />
-                  ) : (
-                    currentRequirements.pk
-                  )}
-                </TableCell>
-                <TableCell>%</TableCell>
-              </TableRow>
-              <TableRow>
-                <TableCell>Lemak Kasar (LK)</TableCell>
-                <TableCell>
-                  {isEditing ? (
-                    <Input
-                      type="number"
-                      value={editedRequirements.lk}
-                      onChange={(e) =>
-                        setEditedRequirements({
-                          ...editedRequirements,
-                          lk: parseFloat(e.target.value) || 0,
-                        })
-                      }
-                      className="w-24"
-                    />
-                  ) : (
-                    currentRequirements.lk
-                  )}
-                </TableCell>
-                <TableCell>%</TableCell>
-              </TableRow>
-              <TableRow>
-                <TableCell>Serat Kasar (SK)</TableCell>
-                <TableCell>
-                  {isEditing ? (
-                    <Input
-                      type="number"
-                      value={editedRequirements.sk}
-                      onChange={(e) =>
-                        setEditedRequirements({
-                          ...editedRequirements,
-                          sk: parseFloat(e.target.value) || 0,
-                        })
-                      }
-                      className="w-24"
-                    />
-                  ) : (
-                    currentRequirements.sk
-                  )}
-                </TableCell>
-                <TableCell>%</TableCell>
-              </TableRow>
-              <TableRow>
-                <TableCell>TDN</TableCell>
-                <TableCell>
-                  {isEditing ? (
-                    <Input
-                      type="number"
-                      value={editedRequirements.tdn}
-                      onChange={(e) =>
-                        setEditedRequirements({
-                          ...editedRequirements,
-                          tdn: parseFloat(e.target.value) || 0,
-                        })
-                      }
-                      className="w-24"
-                    />
-                  ) : (
-                    currentRequirements.tdn
-                  )}
-                </TableCell>
-                <TableCell>%</TableCell>
-              </TableRow>
-              <TableRow>
-                <TableCell>Energi Metabolisme (EM)</TableCell>
-                <TableCell>
-                  {isEditing ? (
-                    <Input
-                      type="number"
-                      value={editedRequirements.em}
-                      onChange={(e) =>
-                        setEditedRequirements({
-                          ...editedRequirements,
-                          em: parseFloat(e.target.value) || 0,
-                        })
-                      }
-                      className="w-24"
-                    />
-                  ) : (
-                    currentRequirements.em
-                  )}
-                </TableCell>
-                <TableCell>Kkal/kg</TableCell>
-              </TableRow>
-              <TableRow>
-                <TableCell>Kalsium (Ca)</TableCell>
-                <TableCell>
-                  {isEditing ? (
-                    <Input
-                      type="number"
-                      value={editedRequirements.calcium}
-                      onChange={(e) =>
-                        setEditedRequirements({
-                          ...editedRequirements,
-                          calcium: parseFloat(e.target.value) || 0,
-                        })
-                      }
-                      className="w-24"
-                    />
-                  ) : (
-                    currentRequirements.calcium
-                  )}
-                </TableCell>
-                <TableCell>%</TableCell>
-              </TableRow>
-            </TableBody>
-          </Table>
+        <div className="space-y-4">
+          <div className="overflow-x-auto">
+            <div className="min-w-[300px]">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Nutrisi</TableHead>
+                    <TableHead>Nilai</TableHead>
+                    <TableHead>Satuan</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  <TableRow>
+                    <TableCell>Protein Kasar (PK)</TableCell>
+                    <TableCell>
+                      {isEditing ? (
+                        <Input
+                          type="number"
+                          value={editedRequirements.pk}
+                          onChange={(e) =>
+                            setEditedRequirements({
+                              ...editedRequirements,
+                              pk: parseFloat(e.target.value) || 0,
+                            })
+                          }
+                          className="w-20 sm:w-24"
+                        />
+                      ) : (
+                        currentRequirements.pk
+                      )}
+                    </TableCell>
+                    <TableCell>%</TableCell>
+                  </TableRow>
+                  <TableRow>
+                    <TableCell>Lemak Kasar (LK)</TableCell>
+                    <TableCell>
+                      {isEditing ? (
+                        <Input
+                          type="number"
+                          value={editedRequirements.lk}
+                          onChange={(e) =>
+                            setEditedRequirements({
+                              ...editedRequirements,
+                              lk: parseFloat(e.target.value) || 0,
+                            })
+                          }
+                          className="w-20 sm:w-24"
+                        />
+                      ) : (
+                        currentRequirements.lk
+                      )}
+                    </TableCell>
+                    <TableCell>%</TableCell>
+                  </TableRow>
+                  <TableRow>
+                    <TableCell>Serat Kasar (SK)</TableCell>
+                    <TableCell>
+                      {isEditing ? (
+                        <Input
+                          type="number"
+                          value={editedRequirements.sk}
+                          onChange={(e) =>
+                            setEditedRequirements({
+                              ...editedRequirements,
+                              sk: parseFloat(e.target.value) || 0,
+                            })
+                          }
+                          className="w-20 sm:w-24"
+                        />
+                      ) : (
+                        currentRequirements.sk
+                      )}
+                    </TableCell>
+                    <TableCell>%</TableCell>
+                  </TableRow>
+                  <TableRow>
+                    <TableCell>TDN</TableCell>
+                    <TableCell>
+                      {isEditing ? (
+                        <Input
+                          type="number"
+                          value={editedRequirements.tdn}
+                          onChange={(e) =>
+                            setEditedRequirements({
+                              ...editedRequirements,
+                              tdn: parseFloat(e.target.value) || 0,
+                            })
+                          }
+                          className="w-20 sm:w-24"
+                        />
+                      ) : (
+                        currentRequirements.tdn
+                      )}
+                    </TableCell>
+                    <TableCell>%</TableCell>
+                  </TableRow>
+                  <TableRow>
+                    <TableCell>Energi Metabolisme (EM)</TableCell>
+                    <TableCell>
+                      {isEditing ? (
+                        <Input
+                          type="number"
+                          value={editedRequirements.em}
+                          onChange={(e) =>
+                            setEditedRequirements({
+                              ...editedRequirements,
+                              em: parseFloat(e.target.value) || 0,
+                            })
+                          }
+                          className="w-20 sm:w-24"
+                        />
+                      ) : (
+                        currentRequirements.em
+                      )}
+                    </TableCell>
+                    <TableCell>Kkal/kg</TableCell>
+                  </TableRow>
+                  <TableRow>
+                    <TableCell>Kalsium (Ca)</TableCell>
+                    <TableCell>
+                      {isEditing ? (
+                        <Input
+                          type="number"
+                          value={editedRequirements.calcium}
+                          onChange={(e) =>
+                            setEditedRequirements({
+                              ...editedRequirements,
+                              calcium: parseFloat(e.target.value) || 0,
+                            })
+                          }
+                          className="w-20 sm:w-24"
+                        />
+                      ) : (
+                        currentRequirements.calcium
+                      )}
+                    </TableCell>
+                    <TableCell>%</TableCell>
+                  </TableRow>
+                </TableBody>
+              </Table>
+            </div>
+          </div>
 
-          <div className="flex justify-end gap-2 mt-4">
+          <div className="flex flex-wrap justify-end gap-2 mt-4">
             <AlertDialog>
               <AlertDialogTrigger asChild>
                 <Button variant="destructive" size="sm">
@@ -347,7 +353,7 @@ const AnimalRequirementsManager = ({
               </AlertDialogContent>
             </AlertDialog>
           </div>
-        </>
+        </div>
       )}
     </Card>
   );

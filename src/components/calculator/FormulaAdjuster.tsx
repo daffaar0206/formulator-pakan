@@ -52,7 +52,6 @@ const FormulaAdjuster: React.FC<FormulaAdjusterProps> = ({
     calcium: 0,
   });
 
-  // Update state when new initialFormula is received
   useEffect(() => {
     setAdjustedFormula(initialFormula);
     setUnusedIngredients(
@@ -167,12 +166,12 @@ const FormulaAdjuster: React.FC<FormulaAdjusterProps> = ({
   };
 
   return (
-    <Card className="p-6 bg-white">
-      <div className="mb-6">
-        <h2 className="text-2xl font-bold mb-4">Penyesuaian Formula</h2>
-        <div className="flex gap-4 mb-4">
+    <Card className="p-4 sm:p-6 bg-white">
+      <div className="mb-4 sm:mb-6">
+        <h2 className="text-xl sm:text-2xl font-bold mb-4">Penyesuaian Formula</h2>
+        <div className="flex flex-col sm:flex-row gap-4">
           <select
-            className="border p-2 rounded"
+            className="border p-2 rounded flex-grow"
             value={selectedIngredient}
             onChange={(e) => setSelectedIngredient(e.target.value)}
           >
@@ -183,110 +182,116 @@ const FormulaAdjuster: React.FC<FormulaAdjusterProps> = ({
               </option>
             ))}
           </select>
-          <Input
-            type="number"
-            placeholder="Persentase"
-            value={newPercentage}
-            onChange={(e) => setNewPercentage(e.target.value)}
-            className="w-32"
-          />
-          <Button onClick={handleAddIngredient}>Tambah Bahan</Button>
+          <div className="flex gap-2">
+            <Input
+              type="number"
+              placeholder="Persentase"
+              value={newPercentage}
+              onChange={(e) => setNewPercentage(e.target.value)}
+              className="w-32"
+            />
+            <Button onClick={handleAddIngredient}>Tambah</Button>
+          </div>
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-6">
-        <div>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+        <div className="overflow-x-auto">
           <h3 className="text-lg font-semibold mb-2">Formula Saat Ini</h3>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Bahan</TableHead>
-                <TableHead>Persentase (%)</TableHead>
-                <TableHead>Aksi</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {adjustedFormula.map((item, index) => (
-                <TableRow key={index}>
-                  <TableCell>{item.ingredient}</TableCell>
-                  <TableCell>
-                    <Input
-                      type="number"
-                      value={item.percentage}
-                      onChange={(e) => handleUpdatePercentage(index, e.target.value)}
-                      className="w-24"
-                    />
-                  </TableCell>
-                  <TableCell>
-                    <Button
-                      variant="destructive"
-                      size="sm"
-                      onClick={() => handleRemoveIngredient(index)}
-                    >
-                      Hapus
-                    </Button>
-                  </TableCell>
+          <div className="min-w-[300px]">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Bahan</TableHead>
+                  <TableHead>Persentase (%)</TableHead>
+                  <TableHead>Aksi</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {adjustedFormula.map((item, index) => (
+                  <TableRow key={index}>
+                    <TableCell className="whitespace-nowrap">{item.ingredient}</TableCell>
+                    <TableCell>
+                      <Input
+                        type="number"
+                        value={item.percentage}
+                        onChange={(e) => handleUpdatePercentage(index, e.target.value)}
+                        className="w-20 sm:w-24"
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        onClick={() => handleRemoveIngredient(index)}
+                      >
+                        Hapus
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
         </div>
 
-        <div>
+        <div className="overflow-x-auto">
           <h3 className="text-lg font-semibold mb-2">Kandungan Nutrisi</h3>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Nutrisi</TableHead>
-                <TableHead>Nilai</TableHead>
-                <TableHead>Target</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              <TableRow>
-                <TableCell>PK</TableCell>
-                <TableCell className={getNutrientStatus("pk")}>
-                  {currentNutrients.pk.toFixed(2)}%
-                </TableCell>
-                <TableCell>{requirements?.pk}%</TableCell>
-              </TableRow>
-              <TableRow>
-                <TableCell>LK</TableCell>
-                <TableCell className={getNutrientStatus("lk")}>
-                  {currentNutrients.lk.toFixed(2)}%
-                </TableCell>
-                <TableCell>{requirements?.lk}%</TableCell>
-              </TableRow>
-              <TableRow>
-                <TableCell>SK</TableCell>
-                <TableCell className={getNutrientStatus("sk")}>
-                  {currentNutrients.sk.toFixed(2)}%
-                </TableCell>
-                <TableCell>{requirements?.sk}%</TableCell>
-              </TableRow>
-              <TableRow>
-                <TableCell>TDN</TableCell>
-                <TableCell className={getNutrientStatus("tdn")}>
-                  {currentNutrients.tdn.toFixed(2)}%
-                </TableCell>
-                <TableCell>{requirements?.tdn}%</TableCell>
-              </TableRow>
-              <TableRow>
-                <TableCell>EM</TableCell>
-                <TableCell className={getNutrientStatus("em")}>
-                  {currentNutrients.em.toFixed(2)} Kkal/kg
-                </TableCell>
-                <TableCell>{requirements?.em} Kkal/kg</TableCell>
-              </TableRow>
-              <TableRow>
-                <TableCell>Ca</TableCell>
-                <TableCell className={getNutrientStatus("calcium")}>
-                  {currentNutrients.calcium.toFixed(2)}%
-                </TableCell>
-                <TableCell>{requirements?.calcium}%</TableCell>
-              </TableRow>
-            </TableBody>
-          </Table>
+          <div className="min-w-[300px]">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Nutrisi</TableHead>
+                  <TableHead>Nilai</TableHead>
+                  <TableHead>Target</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                <TableRow>
+                  <TableCell>PK</TableCell>
+                  <TableCell className={getNutrientStatus("pk")}>
+                    {currentNutrients.pk.toFixed(2)}%
+                  </TableCell>
+                  <TableCell>{requirements?.pk}%</TableCell>
+                </TableRow>
+                <TableRow>
+                  <TableCell>LK</TableCell>
+                  <TableCell className={getNutrientStatus("lk")}>
+                    {currentNutrients.lk.toFixed(2)}%
+                  </TableCell>
+                  <TableCell>{requirements?.lk}%</TableCell>
+                </TableRow>
+                <TableRow>
+                  <TableCell>SK</TableCell>
+                  <TableCell className={getNutrientStatus("sk")}>
+                    {currentNutrients.sk.toFixed(2)}%
+                  </TableCell>
+                  <TableCell>{requirements?.sk}%</TableCell>
+                </TableRow>
+                <TableRow>
+                  <TableCell>TDN</TableCell>
+                  <TableCell className={getNutrientStatus("tdn")}>
+                    {currentNutrients.tdn.toFixed(2)}%
+                  </TableCell>
+                  <TableCell>{requirements?.tdn}%</TableCell>
+                </TableRow>
+                <TableRow>
+                  <TableCell>EM</TableCell>
+                  <TableCell className={getNutrientStatus("em")}>
+                    {currentNutrients.em.toFixed(2)} Kkal/kg
+                  </TableCell>
+                  <TableCell>{requirements?.em} Kkal/kg</TableCell>
+                </TableRow>
+                <TableRow>
+                  <TableCell>Ca</TableCell>
+                  <TableCell className={getNutrientStatus("calcium")}>
+                    {currentNutrients.calcium.toFixed(2)}%
+                  </TableCell>
+                  <TableCell>{requirements?.calcium}%</TableCell>
+                </TableRow>
+              </TableBody>
+            </Table>
+          </div>
         </div>
       </div>
     </Card>

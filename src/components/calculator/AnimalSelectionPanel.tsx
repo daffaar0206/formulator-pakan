@@ -78,8 +78,8 @@ const AnimalSelectionPanel: React.FC<AnimalSelectionPanelProps> = ({
   };
 
   return (
-    <Card className="p-6 bg-white">
-      <div className="grid grid-cols-2 gap-6">
+    <Card className="p-4 sm:p-6 bg-white">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
             Jenis Hewan
@@ -87,7 +87,7 @@ const AnimalSelectionPanel: React.FC<AnimalSelectionPanelProps> = ({
           <select
             value={selectedAnimalType}
             onChange={handleAnimalTypeChange}
-            className="w-full p-2 border rounded-md"
+            className="w-full p-2 border rounded-md bg-white"
           >
             {animalTypes.map((type) => (
               <option key={type} value={type}>
@@ -103,7 +103,7 @@ const AnimalSelectionPanel: React.FC<AnimalSelectionPanelProps> = ({
           <select
             value={selectedAgeGroup}
             onChange={(e) => onAgeGroupChange(e.target.value)}
-            className="w-full p-2 border rounded-md"
+            className="w-full p-2 border rounded-md bg-white"
           >
             {ageGroups.map((group) => (
               <option key={group} value={group}>
