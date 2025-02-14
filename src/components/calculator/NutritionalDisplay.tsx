@@ -1,5 +1,5 @@
 import React from "react";
-import { cn } from "@/lib/utils";
+import { cn } from "../../lib/utils";
 import { Card } from "../ui/card";
 import { Progress } from "../ui/progress";
 import {

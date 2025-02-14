@@ -1,15 +1,16 @@
 import React, { useState, useEffect } from "react";
-import { nutritionalRequirements, updateRequirements, addAnimalType } from "@/lib/nutritionalRequirements";
-import { Button } from "@/components/ui/button";
+import { nutritionalRequirements, updateRequirements, addAnimalType } from "../lib/nutritionalRequirements"; 
+import { Button } from "../components/ui/button"; 
 import AnimalSelectionPanel from "./calculator/AnimalSelectionPanel";
 import IngredientManager from "./calculator/IngredientManager";
 import NutritionalDisplay from "./calculator/NutritionalDisplay";
 import FormulaResults from "./calculator/FormulaResults";
 import FormulaAdjuster from "./calculator/FormulaAdjuster";
 import AnimalRequirementsManager from "./calculator/AnimalRequirementsManager";
-import { defaultIngredients, availableIngredientsList } from "@/lib/defaultIngredients";
-import { calculateFormulation, calculateNutritionalValues, type Ingredient, type FormulaResult } from "@/lib/formulationLogic";
+import { defaultIngredients, availableIngredientsList } from "../lib/defaultIngredients"; 
+import { calculateFormulation, calculateNutritionalValues, type Ingredient, type FormulaResult } from "../lib/formulationLogic"; 
 
+// Rest of the component code remains the same
 const Home = () => {
   const [selectedAnimalType, setSelectedAnimalType] = useState(() => {
     return localStorage.getItem("selectedAnimalType") || "dairy-cattle";
@@ -45,41 +46,69 @@ const Home = () => {
   const [formulationKey, setFormulationKey] = useState(0);
 
   useEffect(() => {
-    localStorage.setItem("ingredients", JSON.stringify(ingredients));
-    localStorage.setItem("availableIngredients", JSON.stringify(availableIngredients));
     localStorage.setItem("selectedAnimalType", selectedAnimalType);
     localStorage.setItem("selectedAgeGroup", selectedAgeGroup);
-  }, [ingredients, availableIngredients, selectedAnimalType, selectedAgeGroup]);
+  }, [selectedAnimalType, selectedAgeGroup]);
 
   const handleAddAvailableIngredient = (ingredient: Ingredient) => {
-    if (ingredients.some(ing => ing.id === ingredient.id)) {
-      alert("Bahan ini sudah ada dalam formulasi");
+    // Check if ingredient is already in the list
+    if (ingredients.some(ing => ing.name === ingredient.name)) {
       return;
     }
-    setIngredients([...ingredients, { ...ingredient }]);
+
+    // Add to selected ingredients with original ID
+    const newIngredients = [...ingredients, ingredient];
+    setIngredients(newIngredients);
+    localStorage.setItem("ingredients", JSON.stringify(newIngredients));
+
+    // Remove from available ingredients
+    const newAvailableIngredients = availableIngredients.filter(ing => ing.id !== ingredient.id);
+    setAvailableIngredients(newAvailableIngredients);
+    localStorage.setItem("availableIngredients", JSON.stringify(newAvailableIngredients));
   };
 
   const handleRemoveAvailableIngredient = (id: string) => {
-    setIngredients(ingredients.filter(ing => ing.id !== id));
-    setAvailableIngredients(availableIngredients.filter(ing => ing.id !== id));
+    const newIngredients = ingredients.filter(ing => ing.id !== id);
+    setIngredients(newIngredients);
+    localStorage.setItem("ingredients", JSON.stringify(newIngredients));
   };
 
   const handleAddNewIngredient = (newIngredient: Ingredient) => {
     const id = Math.random().toString(36).substr(2, 9);
     const ingredientWithId = { ...newIngredient, id };
-    setAvailableIngredients([...availableIngredients, ingredientWithId]);
+    const newAvailableIngredients = [...availableIngredients, ingredientWithId];
+    const newIngredients = [...ingredients, ingredientWithId];
+    setAvailableIngredients(newAvailableIngredients);
+    setIngredients(newIngredients);
+    localStorage.setItem("availableIngredients", JSON.stringify(newAvailableIngredients));
+    localStorage.setItem("ingredients", JSON.stringify(newIngredients));
   };
 
   const handleDeleteIngredient = (id: string) => {
-    setIngredients(ingredients.filter((ing) => ing.id !== id));
+    const ingredientToDelete = ingredients.find(ing => ing.id === id);
+    if (!ingredientToDelete) return;
+
+    // Remove from selected ingredients
+    const newIngredients = ingredients.filter(ing => ing.id !== id);
+    setIngredients(newIngredients);
+    localStorage.setItem("ingredients", JSON.stringify(newIngredients));
+
+    // Find the original ingredient from availableIngredientsList
+    const originalIngredient = availableIngredientsList.find(ing => ing.name === ingredientToDelete.name);
+    if (originalIngredient) {
+      // Add back to available ingredients with its original ID
+      const newAvailableIngredients = [...availableIngredients, originalIngredient];
+      setAvailableIngredients(newAvailableIngredients);
+      localStorage.setItem("availableIngredients", JSON.stringify(newAvailableIngredients));
+    }
   };
 
   const handleEditIngredient = (id: string, updatedIngredient: Ingredient) => {
-    setIngredients(
-      ingredients.map((ing) =>
-        ing.id === id ? { ...updatedIngredient, id } : ing,
-      ),
+    const newIngredients = ingredients.map((ing) =>
+      ing.id === id ? { ...updatedIngredient, id } : ing,
     );
+    setIngredients(newIngredients);
+    localStorage.setItem("ingredients", JSON.stringify(newIngredients));
   };
 
   const handleUpdateRequirements = (pk: number, lk: number, sk: number, tdn: number, em: number, calcium: number) => {
@@ -115,13 +144,22 @@ const Home = () => {
 
   const handleFormulation = () => {
     if (ingredients.length === 0) {
-      alert("Silakan pilih bahan terlebih dahulu untuk memulai formulasi");
+      return;
+    }
+
+    if (ingredients.length < 2) {
       return;
     }
 
     const requirements = nutritionalRequirements[selectedAnimalType][selectedAgeGroup];
+    if (!requirements) {
+      return;
+    }
+
     const result = calculateFormulation(ingredients, requirements);
     
+    console.log("Formulation Result:", result); // Log the result for debugging
+
     setShowAdjuster(false);
     setFormulaResults(result.results);
     setTotalFormulaCost(result.totalCost);
@@ -165,14 +203,23 @@ const Home = () => {
     setShowAdjuster(false);
     setFormulationKey(0);
     setIngredients([]);
+    setAvailableIngredients(availableIngredientsList);
+    localStorage.removeItem("ingredients");
+    localStorage.removeItem("availableIngredients");
   };
 
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8 space-y-4 sm:space-y-6">
-        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-4 sm:mb-8">
-          Kalkulator Formulasi Pakan
-        </h1>
+        <div className="text-center mb-8">
+          <h1 className="text-4xl sm:text-5xl font-bold text-gray-900 tracking-tight uppercase mb-2">
+            PDP Formulator
+          </h1>
+          <p className="text-sm text-gray-500 italic">by: daffaar</p>
+          <h2 className="text-2xl sm:text-3xl font-semibold text-gray-700 mt-6">
+            Kalkulator Formulasi Pakan
+          </h2>
+        </div>
 
         <div className="space-y-4 sm:space-y-6">
           <AnimalSelectionPanel
